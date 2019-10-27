@@ -4,7 +4,7 @@ author: "Callan McGill"
 # tags: ["Type theory", "Lambda Calculus", "Haskell", "Substitution"]
 categories:
   - posts
-date: "2019-09-17"
+date: "2019-10-27"
 draft: false
 mathjax: true
 ---
@@ -26,7 +26,7 @@ data Lam a where
   App :: Lam a -> Lam a -> Lam a
 ```
 
-In order that this work as a theory of computation we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon is to say that a $\beta$-redux is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redux we can then step via (capture-avoiding) substititon:
+In order that this work as a theory of computation we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon is to say that a $\beta$-redux is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redux we can then step via (capture-avoiding) substitution:
 
 $$ (\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}
     \rightsquigarrow
@@ -50,11 +50,11 @@ $$ (\lambda \mathrm{x} \; . \; \lambda \; y \; . \;  x) \; \mathrm{y}
    (\lambda \mathrm{y} \; . \; y \;)
   $$
 
-Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect, the names of free variables are meaningful - in spirit they refer to names we have defined elsewhere (that is, they are can be looked up within a context or in other words they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, alpha renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). In fact most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different).
+Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect, the names of free variables are meaningful - in spirit they refer to names we have defined elsewhere (that is, they are can be looked up within a context or in other words they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, $\alpha$-renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). In fact most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different in this respect).
 
 In practice this means that in order to compute  $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$ we would first $\alpha$-rename $\mathrm{x}$ to a variable that is not already named within $\mathrm{f}$ and is also not free within $\mathrm{arg}$. Doing this via brute force is not _too_ bad but rather fiddly and error prone. A simple version of such a scheme is described by Lennart Augustsson [here](http://augustss.blogspot.com/2007/10/simpler-easier-in-recent-paper-simply.html). 
 
-There are a [whole host](https://www.schoolofhaskell.com/user/edwardk/bound) of more sophisticated methods for dealing with the problem. Perhaps one of the best known is to use De-Bruijn indices. The idea here is to replace all bound variables by a natural number indicating the variable's distance from a binding site and all free variables by distinct natural numbers greater than the maximum depth of any binding site (which we then keep track of within the environment under which computation is performed). For instance the following is how one might translate a term into De-Bruijn indices:
+There are a [whole host](https://www.schoolofhaskell.com/user/edwardk/bound) of more sophisticated methods for dealing with the problem. Perhaps one of the best known is to use De-Bruijn indices. The idea here is to replace all bound variables by a natural number indicating the variable's distance from a binding site and all free variables by distinct natural numbers greater than the maximum depth of any binding site (which we then keep track of within the environment under which computation is performed). For instance, the following is how one might translate a typical term into De-Bruijn indices:
 
 $$ (\lambda \mathrm{x} \; . \; \lambda \; y \; . \;  x \; z)
     \longrightarrow
@@ -80,7 +80,7 @@ data Var a
   | B Int
 
 -- Locally nameless terms will be the same lambda terms with
--- variables now either labelled either bound or free.
+-- variables now labelled either bound or free.
 type LocallyNameless a = Lam (Var a)
 ```
 
@@ -146,7 +146,7 @@ import Test.Tasty.QuickCheck as QC
 {-
 [...]
 -}
--- We use a somewhat unprincipled approach to generating arbitrary instances
+-- We use a somewhat unprincipled approach to generating arbitrary terms
 -- but for our purposes it will do the job.
 instance Arbitrary a => Arbitrary (Lam a) where
   arbitrary =
@@ -163,7 +163,7 @@ instance Arbitrary a => Arbitrary (Lam a) where
         | otherwise = App <$> arbitrary <*> arbitrary
 
 -- |
--- fromLocalyNameless provides a left inverse to toLocallyNameless.
+-- fromLocalyNameless is a left inverse to toLocallyNameless.
 fromLocallyNamelessLeftInverse :: (Ord a, Show a) => Lam a -> Property
 fromLocallyNamelessLeftInverse e =
   (fromLocallyNameless . toLocallyNameless) e === e
@@ -178,13 +178,17 @@ Tests
       +++ OK, passed 1000 tests.
 ```
 
-Now that we have terms in locally nameless representation we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MK) paper they refer to this operation as __instantiate__, though it is also common in the literate to call the operation opening as we open a binder instatiating its outermost binding layer, and we will follow this convention. We note in the code below that we follow (in spirit at least) the MK convention of using a scope type (in our case we
-only use a type synonym but in a more substantial implementation one should use a newtype). This is supposed to remind us that the term we are substitutiing into is not itself a legal lambda term. Instead, it is only legal if it appears as the _body_ of a lambda term (that is to say it may have bound variables within it so long as they are only a single layer so to speak).
+Now that we have terms in locally nameless representation we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MK) paper they refer to this operation as __instantiate__, though it is also common in the literate to call the operation opening as it involves opening the body of a term to substitute for its outermost bound variable, and we will follow this convention. We note in the code below that we follow (in spirit at least) the MK approach of using a scope type to denote a term that is only legal as the body of an expression (i.e. a term which may have bound variables referring to a non-existant outer binder such as $\lambda \; . \; 1$). In our case we
+only use a type synonym but in a more substantial implementation one should use a newtype to get the type safety that such a measure provides.
 ```haskell
 type Scope f x = f x
-
+                    -- ┌─── term we are substituting
+                    -- │
+                    -- │                 ┌─── body we are substiuting into
+                    -- │                 │
+                    -- │                 │
 open :: forall a . Term (Var a) -> Scope Term (Var a) -> Term (Var a)
-open image = go 0
+open image = go 0 -- the bound variable begins at 0
   where
     go :: Int -> Term (Var a) -> Term (Var a)
     go outer =
@@ -204,27 +208,40 @@ open image = go 0
 ```
 
 From here it is easy for us to implement reduction to both normal form and weak-head normal form (where we use call by name semantics). We will, in both cases, write a function that does all of the work using locally nameless terms and functions that make use of that work on named lambda terms
-via the conversion functions we defined previously:
+via the previously defined conversion functions:
 
 ```haskell
 whnfLN :: Term (Var a) -> Term (Var a)
 whnfLN term = go term []
   where
+              -- ┌─── current leftmost lambda term
+              -- │
+              -- │             ┌─── list of collected arguments
+              -- │             │
+              -- │             │
     go :: Term (Var a) -> [Term (Var a)] -> Term (Var a)
     go t as =
       case (t, as) of
         ((App l r), args)
-          -> go l (r : args )
-     -- We only perform substitution if we have found
-     -- a list of arguments to substitute and otherwise
-     -- an outermost lambda is left untouched.
+          -- if we encounter an application then we collect the
+          -- argument on the right and recurse into the left term
+          -> go l (r : args)
+     -- We only perform substitution if we have both
+     -- a non-empty list of arguments to substitute and
+     -- a leftmost lambda term.
         ((Lam _ body) , a:args)
+          -- Note that we substitute the body before evaluation
+          -- and hence we follow call-by-name semantics.
           -> go (substitute a body) args
         _
+          -- otherwise we encountered no further leftmost
+          -- lambda terms and so we re-apply App to the
+          -- build-up list of arguments
           -> foldl' App t as
 
 
 whnf :: (Ord a) => Term a -> Term a
+    -- defer the work to the locally nameless terms
 whnf = fromLocallyNameless . whnfLN . toLocallyNameless
 
 
@@ -235,20 +252,23 @@ nfLN term = go term []
     go t as =
       case (t, as) of
         ((App l r), args)
+          -- the same as above we collect right arguments in a list.
           -> go l (r : args)
-      -- Here we go under a lamda and continue
-      -- to perform reduction within the body.
+      -- If we have no arguments to apply to a lambda then we
+      -- recurse into the body (this is the difference between
+      -- normal form and weak head normal form).
         ((Lam n body) , [])
           -> (Lam n (nfLN body))
         ((Lam _ body) , a:args)
-          -- We substitute the body before evaluation here
-          -- hence call-by-name semantics.
           -> go (substitute a body) args
         _
+          -- If we encounter no further lambdas then we reduce each of our built-up
+          -- arguments before re-applying App.
           -> foldl' App t (fmap nfLN as)
 
 
 nf :: (Ord a) => Term a -> Term a
+  -- again we defer all the actual work to locally nameless terms.
 nf = fromLocallyNameless . nfLN . toLocallyNameless
 ```
 
@@ -258,7 +278,7 @@ Now that we have written this reduction code we should test it, but what on? A n
 $$ \mathrm{zero} = \lambda \mathrm{s} . \lambda \mathrm{z} . \mathrm{z} $$
 $$ \mathrm{succ}\; \mathrm{n} = \lambda \mathrm{s} . \lambda \mathrm{z} . \mathrm{s} \; (\mathrm{n} \; \mathrm{s} \; \mathrm{z}) $$
 
-The idea here is that zero takes as arguments a step function $\mathrm{s}$ and a starting value $\mathrm{z}$ and returns that starting value. A positive number n on the other hand takes those arguments and applies the step function to the starting value n times. Here is what that looks like in our implementation:
+The idea here is that zero takes as arguments a step function $\mathrm{s}$ and a starting value $\mathrm{z}$ and returns that starting value. A positive number n, on the other hand, takes those arguments and applies the step function to the starting value n times. Here is what this looks like using our named terms:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -268,16 +288,18 @@ infixl 5 .$
 (.$) :: Term a -> Term a -> Term a
 (.$) = App
 
+-- |
+-- The unary natural numbers.
 data Nat = Z | S Nat
 
 -- Notice here in the inductive case we reduce to normal form. Not doing so
 -- leads to a subtly different term wherein we are applying "S" to a term
--- that itself is a lambda term applied to two arguments but not yet reduced.
+-- that itself is a lambda term applied to two arguments but not yet β-reduced.
 fromNat :: Nat -> Term Text
 fromNat Z     = Lam "S" (Lam "Z" "Z")
 fromNat (S n) = Lam "S" (Lam "Z" ("S" .$ (nf $ fromNat n .$ "S" .$ "Z")))
 
--- Let us also give ourselves names for the first few church numerals:
+-- Let us also give ourselves names for the first few church numerals for convenience:
 cZero  = fromNat Z
 cOne   = fromNat (S Z)
 cTwo   = fromNat (S (S Z))
@@ -290,10 +312,9 @@ cSix   = fromNat (S (S (S (S (S (S Z))))))
 Now recall that we wish to test how our code _evaluates_ to normal form and thus
 we should consider some functions to actually run. One idea here is addition and multiplication
 but how are these defined for Church numerals? Remember that $\mathrm{n}$ is meant to represent applying
-a step function n times to a value. If the value we apply the function to is that which has
-already been gotten by applying a step function argument $\mathrm{s}$ to a starting value $\mathrm{m}$ times we see that this is operationally the same as $\mathrm{m} + \mathrm{n}$:
+a step function n times to a value. If the value we apply the step function to is the result of applying a step function argument $\mathrm{s}$ to a starting value $\mathrm{m}$ times we see that this is operationally the same as $\mathrm{m} + \mathrm{n}$. In lambda terms:
 
-  $$ \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
+  $$ \mathrm{add} := \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
       \lambda \mathrm{s} \; . \; \lambda \; \mathrm{z} \; . \;
       \mathrm{n} \; \mathrm{s} \; (\mathrm{m} \;  \mathrm{s} \; \mathrm{z} )
   $$
@@ -301,7 +322,7 @@ already been gotten by applying a step function argument $\mathrm{s}$ to a start
 Similarly we can define multiplication of $\mathrm{m}$ by $\mathrm{n}$ by applying $\mathrm{n}$ to
 the step funtion $(\mathrm{m} \; s)$ (the $\mathrm{m}$-fold application of $\mathrm{s}$) and starting value $\mathrm{z}$:
 
-  $$ \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
+  $$ \mathrm{mult}:= \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
       \lambda \mathrm{s} \; . \; \lambda \; \mathrm{z} \; . \;
       \mathrm{n} \; (\mathrm{m} \; \mathrm{s}) \; z
   $$
@@ -317,26 +338,26 @@ churchMult = Lam "m" (Lam "n" (Lam "S" (Lam "Z" ("n" .$ ("m" .$ "S") .$ "Z"))))
 
 
 
-As a first check let us test that $2 + 2 \rightsquigarrow 4$ and that $2 * 3 \rightsquigarrow 6$:
+As a first check let us see that $2 + 2 \rightsquigarrow 4$ and that $2 * 3 \rightsquigarrow 6$:
 
 ```haskell
 import Test.Tasty.HUnit      as HU
 -- [...]
 unitTests :: TestTree
-unitTests = testGroup "Unit Tests"
+unitTests = testGroup "Church Arithmetic Unit Tests"
   [ HU.testCase
-      "2 + 2 -> 4" $
+      "2 + 2 ⇝ 4" $
       (nf $ (churchAdd .$ cTwo) .$ cTwo) @?= cFour
   , HU.testCase
-      "2 * 3 -> 6" $
+      "2 * 3 ⇝ 6" $
       (nf $ churchMult .$ cTwo .$ cThree) @?= cSix
   ]
 ```
 This is fortunately the case:
 ```bash
-Unit Tests
-    2 + 2 -> 4:                         OK
-    2 * 3 -> 6:                         OK
+Church Arithmetic Unit Tests
+    2 + 2 ⇝ 4:                         OK
+    2 * 3 ⇝ 6:                         OK
 ```
 
 For a slightly more robust (for some definition of robust) test we can also write property tests in order to check that addition and multiplication are each commutative. First we will want to have an arbitrary instance for our definition of the unary natural numbers:
@@ -353,7 +374,7 @@ instance Arbitrary Nat where
         i <- choose (0,50)
         pure $ fromInt i
 ```
-Now we can write our properties:
+Now we can write our properties as follows:
 ```haskell
 import Test.Tasty.QuickCheck as QC
 {-
@@ -371,7 +392,7 @@ multiplicationIsCommutative n m =
   === nf (churchMult .$ fromNat m .$ fromNat n)
 
 churchProperties :: [TestTree]
-churchProperties = 
+churchProperties =
   [ QC.testProperty
       "Addition of Church numerals is commutative"
      (withMaxSuccess 100 additionIsCommutative)
@@ -390,3 +411,18 @@ Running this gives us the following:
 ```
 
 It looks like our implementation might be (close to) working as hoped! Phew.
+
+We should note that one downside to our version of locally nameless terms is
+that there are syntacticaly valid terms in our grammar which nevertheless do
+not make sense as lambda terms. For example the following term is perfectly valid
+in our grammar:
+  $$
+    \lambda \; . \; \lambda \; . \; (1 \; 3)
+  $$
+
+Here there is a bound variable $3$ but the binding depth is only 1 (counting from $0$).
+We would like instead to somehow use the type-system to enforce that each of our terms
+is (intrinsically) a valid lambda term. Doing this in Haskell is quite a challenge as
+such an endeavour necessarily involves types which keep track of the maximum current
+binding variable and thus dependent types. In our next post we will see how to do this
+using Agda and then prove various properties of our locally nameless terms.
