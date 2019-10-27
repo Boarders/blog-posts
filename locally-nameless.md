@@ -26,7 +26,7 @@ data Lam a where
   App :: Lam a -> Lam a -> Lam a
 ```
 
-In order that this work as a theory of computation, we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon (in the theory) is to say that a $\beta$-redux is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redux we can then step via (capture-avoiding) substitution:
+In order that this work as a theory of computation, we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon in lambda caluclus is to say that a $\beta$-redux is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redux we can then step via (capture-avoiding) substitution:
 
 $$ (\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}
     \rightsquigarrow
@@ -50,9 +50,9 @@ $$ (\lambda \mathrm{x} \; . \; \lambda \; y \; . \;  x) \; \mathrm{y}
    (\lambda \mathrm{y} \; . \; y \;)
   $$
 
-Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect: the names of free variables are meaningful because, in spirit, they refer to names we have defined elsewhere (that is, they can be looked up within a context or in other words they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact, it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, $\alpha$-renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). In fact most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different in this respect).
+Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect: the names of free variables are meaningful because, in spirit, they refer to names we have defined elsewhere (that is, they can be looked up within a context, or, in other words, they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact, it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, $\alpha$-renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). Most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different in this respect).
 
-In practice this means that in order to compute  $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$ we would first $\alpha$-rename $\mathrm{x}$ to a variable that is neither already named within $\mathrm{f}$, nor appears free within $\mathrm{arg}$. Carrying out such a procedure by brute force is workable, but tends to be rather error-prone. A straightforward approach along these lines version is described in [this excellent post](http://augustss.blogspot.com/2007/10/simpler-easier-in-recent-paper-simply.html) by Lennart Augustsson. 
+In practice this means that in order to compute  $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$ we would first $\alpha$-rename $\mathrm{x}$ to a variable that is neither already named within $\mathrm{f}$, nor appears free within $\mathrm{arg}$. Carrying out such a procedure by brute force is workable, but tends to be rather error-prone. A straightforward approach along these lines is described in [this excellent post](http://augustss.blogspot.com/2007/10/simpler-easier-in-recent-paper-simply.html) by Lennart Augustsson. 
 
 There are a [whole host](https://www.schoolofhaskell.com/user/edwardk/bound) of more sophisticated methods for dealing with the problem of capture-avoiding substitution. Perhaps one of the best known is to use De-Bruijn indices. The idea here is to replace all bound variables by a natural number. This indicates the variable's distance from its binding site. All free variables are then represented by distinct natural numbers greater than the maximum depth of any binding site in the term. We then keep track of these variables within the environment under which computation is performed. For instance, the following is how one might translate a typical term into De-Bruijn indices:
 
@@ -69,7 +69,7 @@ Here we keep both the translated lambda term but also the context for how to rea
 This approach offers two key advantages:
 
   * Capture avoiding substitution becomes a matter of keeping binding distance arithmetic in check.
-  * The De-Bruijn representation gives canonical representatives for $\alpha$-equivalence classes thus allowing us to test for $\alpha$-equivalence via syntactic equality of terms.
+  * The De-Bruijn representation gives canonical representatives for $\alpha$-equivalence classes, thus allowing us to test for $\alpha$-equivalence via syntactic equality of terms.
 
 On the other hand, Bob Atkey has, rather aptly, referred to the ability to read terms written with DeBruijn indices as a "cylon detector". What we gain in ease of implementation we give in much worse readability.
 
@@ -182,10 +182,10 @@ Tests
       +++ OK, passed 1000 tests.
 ```
 
-Now that we have terms in locally nameless representation, we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MK) paper, they refer to this operation as __"instantiate"__. It is also common in the locally nameless literature to call the operation __"opening"__ or __"open"__ because it involves opening the body of a term to substitute for its outermost bound variable. As this accords with our intuitions on the meaning of substitution of locally nameless terms we will follow this convention.
+Now that we have terms in locally nameless representation, we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MK) paper, they refer to this operation as __"instantiate"__. It is also common in the locally nameless literature to call the operation __"opening"__ or __"open"__ because it involves opening the body of a term to substitute for its outermost bound variable. As this accords with our intuitions on the meaning of substitution of locally nameless terms, we will follow this convention.
 
 Note that in the code below, we follow (at least in spirit) the MK approach of using a scope type to denote a term that is only legal as the body of an expression (i.e. a term which may have bound variables referring to a non-existant outer binder such as $\lambda \; . \; 1$). In our case, we
-only use a type synonym; however, in a more substantial implementation one should use a newtype to get the type safety that such a measure confers.
+only use a type synonym; however, in a more substantial implementation, one should use a newtype to get the type safety that such a measure confers.
 ```haskell
 type Scope f x = f x
                     -- ┌─── term we are substituting
@@ -316,16 +316,16 @@ cSix   = fromNat (S (S (S (S (S (S Z))))))
 ```
 
 Now recall that we wish to test how our code _evaluates_ to normal form and thus
-we should consider some functions to actually run. One idea here is addition and multiplication.
+we should consider some functions to actually run. Two such functions that come to mind are addition and multiplication.
 But how are these defined for Church numerals? Remember that $\mathrm{n}$ is meant to represent applying
-a step function $\mathrm{n}$ times to a value. If the value we apply the step function to is the result of applying a step function argument $\mathrm{s}$ to a starting value $\mathrm{m}$ times, we see that this is operationally the same as $\mathrm{m} + \mathrm{n}$. In lambda terms:
+a step function $\mathrm{n}$ times to a value. If the value we apply to the step function is the result of applying a step function argument $\mathrm{s}$ to a starting value $\mathrm{m}$ times, we see that this is operationally the same as $\mathrm{m} + \mathrm{n}$. In lambda terms:
 
   $$ \mathrm{add} := \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
       \lambda \mathrm{s} \; . \; \lambda \; \mathrm{z} \; . \;
       \mathrm{n} \; \mathrm{s} \; (\mathrm{m} \;  \mathrm{s} \; \mathrm{z} )
   $$
 
-Similarly we can define multiplication of $\mathrm{m}$ by $\mathrm{n}$ by applying $\mathrm{n}$ to
+Similarly, we can define multiplication of $\mathrm{m}$ by $\mathrm{n}$ by applying $\mathrm{n}$ to
 the step funtion $(\mathrm{m} \; s)$ (the $\mathrm{m}$-fold application of $\mathrm{s}$) and starting value $\mathrm{z}$:
 
   $$ \mathrm{mult}:= \lambda \mathrm{n} \; . \; \lambda \; \mathrm{m} \; . \;
@@ -420,7 +420,7 @@ It looks like our implementation might be (close to) working as hoped! Phew.
 
 We should note that one downside to our version of locally nameless terms is
 that there are syntacticaly valid terms in our grammar which, nevertheless, do
-not make sense as lambda terms. For example the following term is perfectly valid
+not make sense as lambda terms. For example, the following term is perfectly valid
 in our grammar:
   $$
     \lambda \; . \; \lambda \; . \; (1 \; 3)
