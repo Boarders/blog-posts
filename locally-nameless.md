@@ -190,7 +190,7 @@ only use a type synonym; however, in a more substantial implementation, one shou
 type Scope f x = f x
                     -- ┌─── term we are substituting
                     -- │
-                    -- │                 ┌─── body we are substiuting into
+                    -- │                 ┌─── body we are substituting into
                     -- │                 │
                     -- │                 │
 open :: forall a . Term (Var a) -> Scope Term (Var a) -> Term (Var a)
@@ -242,7 +242,7 @@ whnfLN term = go term []
         _
           -- otherwise we encountered no further leftmost
           -- lambda terms and so we re-apply App to the
-          -- build-up list of arguments
+          -- built-up list of arguments
           -> foldl' App t as
 
 
