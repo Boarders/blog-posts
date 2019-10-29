@@ -71,7 +71,7 @@ This approach offers two key advantages:
   * Capture avoiding substitution becomes a matter of keeping binding distance arithmetic in check.
   * The De-Bruijn representation gives canonical representatives for $\alpha$-equivalence classes, thus allowing us to test for $\alpha$-equivalence via syntactic equality of terms.
 
-On the other hand, Bob Atkey has, rather aptly, referred to the ability to read terms written with DeBruijn indices as a "cylon detector". What we gain in ease of implementation we give in much worse readability.
+On the other hand, Bob Atkey has, rather aptly, referred to the ability to read terms written with DeBruijn indices as a "cylon detector". What we gain in ease of implementation we give up in much worse readability.
 
 Instead we turn to the hybrid approach in the paper [I Am Not a Number -- I am a Free Variable](http://www.cs.ru.nl/~james/RESEARCH/haskell2004.pdf). Let us keep free variables free and use De-Bruijn indices only for bound variables:
 
@@ -336,10 +336,10 @@ the step funtion $(\mathrm{m} \; s)$ (the $\mathrm{m}$-fold application of $\mat
 Let us translate this into Haskell:
 ```haskell
 churchAdd :: Term Text
-churchAdd = Lam "m" (Lam "n" (Lam "S" (Lam "Z" ((App "m" "S") .$ ("n" .$ "S" .$ "Z")))))
+churchAdd = Lam "n" (Lam "m" (Lam "S" (Lam "Z" ((App "n" "S") .$ ("m" .$ "S" .$ "Z")))))
 
 churchMult :: Term Text
-churchMult = Lam "m" (Lam "n" (Lam "S" (Lam "Z" ("n" .$ ("m" .$ "S") .$ "Z"))))
+churchMult = Lam "n" (Lam "m" (Lam "S" (Lam "Z" ("n" .$ ("m" .$ "S") .$ "Z"))))
 ```
 
 
