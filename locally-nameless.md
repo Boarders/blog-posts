@@ -26,7 +26,7 @@ data Lam a where
   App :: Lam a -> Lam a -> Lam a
 ```
 
-In order that this work as a theory of computation, we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon in lambda caluclus is to say that a $\beta$-redux is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redux we can then step via (capture-avoiding) substitution:
+In order that this work as a theory of computation, we need some notion of evaluation and this is driven by $\beta$-reduction. The standard jargon in lambda caluclus is to say that a $\beta$-redex is any subterm of the form $(\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}$. On such a $\beta$-redex we can then step via (capture-avoiding) substitution:
 
 $$ (\lambda \mathrm{x} \; . \; \mathrm{f}) \; \mathrm{arg}
     \rightsquigarrow
@@ -45,9 +45,9 @@ $$
 Precisely how we choose to set up these rules to give a computational semantics to our language corresponds
 algorithmically to a choice of evaluation strategy. As such, this opens up myriad interesting questions related to order of evaluation and normal forms and so on. Instead we will largely bypass these considerations and concentrate on the more humdrum (but no less vital) matter of the practicalities of performing such capture-avoiding substitutions. The basic problem with too naive an approach is as follows:
 
-$$ (\lambda \mathrm{x} \; . \; \lambda \; y \; . \;  x) \; \mathrm{y}
+$$ (\lambda \; \mathrm{x} \; . \; \lambda \; y \; . \;  x) \; \mathrm{y}
     \rightsquigarrow
-   (\lambda \mathrm{y} \; . \; y \;)
+   (\lambda \mathrm{y} \; . \; y)
   $$
 
 Here we have substituted the _free_ variable y into our lambda term and it has become _bound_. This is semantically incorrect: the names of free variables are meaningful because, in spirit, they refer to names we have defined elsewhere (that is, they can be looked up within a context, or, in other words, they are _open_ for further substitution). Conversely, the names of bound variables are, computationally speaking, unimportant. In fact, it is usual to refer to the grammar we have introduced earlier as _pre-lambda terms_ and to take lambda terms as referring to the equivalence classes under $\alpha$-equivalence. This refers to the (equivalence) relation whereby two terms are equivalent if we can consistently rename the bound variables of one to obtain the other (here too we need to take care, $\alpha$-renaming $\mathrm{x}$ to $\mathrm{y}$ in the above term would lead to a different sort of variable capture). Most accounts of $\alpha$-equivalence are themselves intimiately tied up with the question of how to perform substitution (and locally nameless is no different in this respect).
@@ -56,9 +56,9 @@ In practice this means that in order to compute  $(\lambda \mathrm{x} \; . \; \m
 
 There are a [whole host](https://www.schoolofhaskell.com/user/edwardk/bound) of more sophisticated methods for dealing with the problem of capture-avoiding substitution. Perhaps one of the best known is to use De-Bruijn indices. The idea here is to replace all bound variables by a natural number. This indicates the variable's distance from its binding site. All free variables are then represented by distinct natural numbers greater than the maximum depth of any binding site in the term. We then keep track of these variables within the environment under which computation is performed. For instance, the following is how one might translate a typical term into De-Bruijn indices:
 
-$$ (\lambda \mathrm{x} \; . \; \lambda \; y \; . \;  x \; z)
+$$ (\lambda \; \mathrm{x} \; . \; \lambda \; y \; . \;  x \; z)
     \longrightarrow
-   (\lambda \; \lambda \; . \; 1 \; 3 \;)
+   (\lambda \; \lambda \; . \; 1 \; 3 )
    $$
   $$
    [z \mapsto 3]
@@ -182,9 +182,9 @@ Tests
       +++ OK, passed 1000 tests.
 ```
 
-Now that we have terms in locally nameless representation, we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MK) paper, they refer to this operation as __"instantiate"__. It is also common in the locally nameless literature to call the operation __"opening"__ or __"open"__ because it involves opening the body of a term to substitute for its outermost bound variable. As this accords with our intuitions on the meaning of substitution of locally nameless terms, we will follow this convention.
+Now that we have terms in locally nameless representation, we can perform substitution in a fairly straightforward manner. In the McBride--McKinna (MM) paper, they refer to this operation as __"instantiate"__. It is also common in the locally nameless literature to call the operation __"opening"__ or __"open"__ because it involves opening the body of a term to substitute for its outermost bound variable. As this accords with our intuitions on the meaning of substitution of locally nameless terms, we will follow this convention.
 
-Note that in the code below, we follow (at least in spirit) the MK approach of using a scope type to denote a term that is only legal as the body of an expression (i.e. a term which may have bound variables referring to a non-existant outer binder such as $\lambda \; . \; 1$). In our case, we
+Note that in the code below, we follow (at least in spirit) the MM approach of using a scope type to denote a term that is only legal as the body of an expression (i.e. a term which may have bound variables referring to a non-existant outer binder such as $\lambda \; . \; 1$). In our case, we
 only use a type synonym; however, in a more substantial implementation, one should use a newtype to get the type safety that such a measure confers.
 ```haskell
 type Scope f x = f x
