@@ -9,13 +9,13 @@ draft: false
 mathjax: true
 ---
 
-The halting problem says (informally) that there is no algorithm which for any generally recursive program with arbitrary input tells us whether that program terminates. This is usually formalised by first picking some specific theory of computation and then showing within that theory that no such program can be written. For example, in the setting of the untyped lambda calculus this can be stated as follows:
+The halting problem says, informally, that there is no algorithm which for any arbitrary computation with given input tells us whether that program terminates with that input. This is usually formalised by first picking some specific theory of computation and then demonstrating within that theory that no such program can be written (and perhaps then appealing to the Church--Turing thesis to show that this function also cannot be written in other formalisations of computation). For example, in the setting of the untyped lambda calculus a precise statement of halting can be given as follows:
 
 
 **Theorem ($\lambda$-halting)**: There does not exist a $\lambda$-term
-$\def\h{\mathrm{h}} \def\l{\mathrm{l}} \def\true{\mathrm{true}} \def\false{\mathrm{false}} \h$ such that $(\mathrm{h} \; \mathrm{L})$ evaluated to $\true$ precisely when $\mathrm{L}$ terminates (meaning here, that there exists some  finite sequence of $\beta$-reductions under which $\mathrm{L}$ reduces to a normal form).
+$\def\h{\mathrm{h}} \def\l{\mathrm{l}} \def\true{\mathrm{true}} \def\false{\mathrm{false}} \h$ such that $(\mathrm{h} \; \mathrm{L})$ evaluates to $\true$ when $\mathrm{L}$ terminates (meaning in this setting, that there exists some  finite sequence of $\beta$-reductions under which $\mathrm{L}$ reduces to a normal form) and false otherwise.
 
-Let us try to prove this fact (the arguments here taken from the paper _Computational foundatios of basic recursive function theory_ by Constable and Smith) . Consider the fixed-point $\def\Y{\mathrm{Y}} \Y$-combinator. This is defined as:
+Let us try to prove this fact (the arguments here are taken from the paper [Computational foundations of basic recursive function theory](https://www.sciencedirect.com/science/article/pii/0304397593900858) by Constable and Smith). Recall (or introduce yourself to) the fixed-point $\def\Y{\mathrm{Y}} \Y$-combinator:
 
 $$
 \def\mr#1{\mathrm{#1}}
@@ -25,7 +25,7 @@ $$
 \Y = \la{f} \ap{(\la{x} \ap{f}{(\ap{x}{x})})}{(\la{x} \ap{f}{(\ap{x}{x})})}
   $$
 
-The key property this satisfies, is that for any lambda term $\rm{g}$ we have that $(\ap{\Y}{\rm{g}})$ is a fixed point for $\rm{g}$ in the sense that $\ap{g}{(\ap{\Y}{g})}$ is $\beta$-equivalent to $\ap{\Y}{g}$. This is easy to observe as follows:
+As indicated by the name, fixed-point combinator, $\rm{Y}$ satisfies a key property - for any lambda term $\rm{g}$ we have that $(\ap{\Y}{\rm{g}})$ is a fixed point for $\rm{g}$ in the sense that $\ap{g}{(\ap{\Y}{g})}$ is $\beta$-equivalent to $\ap{\Y}{g}$. This is easy to observe as follows:
 
 $$
 \ap{\Y}{g} \be \ap{(\la{x} \ap{g}{(\ap{x}{x})})}{(\la{x} \ap{g}{(\ap{x}{x})})}
@@ -33,7 +33,7 @@ $$
  \equiv_{\beta} \ap{g}{(\ap{Y}{g})}
   $$
 
-Now in order to prove this theorem let us consider the consider the terms:
+Now in order to prove this theorem let us consider the consider the following terms:
 $$
   \bot = \ap{Y}{(\la{x}x)}
   $$
@@ -41,23 +41,24 @@ $$
   \rm{p} = {\la{n}\text{if $(\ap{h}{n})$ then $\bot$ else true}}
   $$
 $$
+  \def\betaStep{\mapsto_{\beta}}
   \rm{d} = \ap{Y}{p}
   $$
 Let us think about the value of $\rm{h}$ on this (admittedly rather mysterious) term $\rm{d}$.
 
   - if $\ap{h}{d}$ is $\rm{true}$ then we note that:
   $$
-     \rm{d} \equiv_\beta \ap{p}{d} :\equiv \text{if $(\ap{h}{d})$ then $\bot$ else true} \mapsto \bot
+     \rm{d} \equiv_\beta \ap{p}{d} :\equiv \text{if $(\ap{h}{d})$ then $\bot$ else true} \betaStep \bot
     $$
     We therefore have that $\rm{d}$ does not terminate and so $\ap{h}{d}$ is false.
 
   - Simlarly if $\ap{h}{d}$ is $\rm{false}$ then:
     $$
-     \rm{d} \equiv_\beta \ap{p}{d} :\equiv \text{if $(\ap{h}{d})$ then $\bot$ else true} \mapsto \text{true}
+     \rm{d} \equiv_\beta \ap{p}{d} :\equiv \text{if $(\ap{h}{d})$ then $\bot$ else true} \betaStep \text{true}
     $$
     and so we get that $\rm{d}$ terminates and so we should have $\ap{h}{d}$ is true.
 
-In order to make this argument perhaps more concrete, let us consdier what it looks like in a typed setting with Haskell's concrete syntax. Note that in Haskell all types are _partial_ (using some distortion of Constable's terminology). This means that every type is inhabited by some non-terminating term which is typically denoted $\bot$ (analogous to the term considered above). Let us then reformulate a version of the above theorem in terms of Haskell types.
+In order to make this argument perhaps more intuitive, let us start by translating to a typed setting with Haskell's concrete syntax. Note that in Haskell all types are _partial_ (using some distortion of Constable's terminology). This means that every type is inhabited by some non-terminating term which is typically denoted $\bot$ (analogous to the term considered above). Let us then reformulate a version of the above theorem in terms of Haskell types.
 
 **Theorem (haskell-halting)**: In Haskell there is no function $\rm{h}$ with the following behaviour:
 ```haskell
@@ -66,16 +67,16 @@ h ⊥ = 0
 h _ = 1
 ```
   
-This is not legal Haskell and we are claiming this fact cannot be remedied. More precisely, the above says that there is no Haskell function on the natural numbers which determines whether the input is, in fact, a diverging computation. This may seem far away from the Halting problem insomuch as we are only considering the natural numbers but we can observe that for any $\rm{f} :: \rm{Nat} \rightarrow \rm{Nat}$ we can compute $\ap{h}{(\ap{f}{n})}$ to determine if $\rm{f}$ halts on input $\rm{n}$ and so this would indeed determine those inputs for which $\rm{f}$ halted.
+This is not legal Haskell (and moreover we are claiming this fact cannot be remedied). More precisely, the above says that there is no Haskell function on the natural numbers which determines whether the input is, in fact, a diverging computation. This may slightly different to the Halting problem insomuch as we are only considering the partial natural numbers but we can observe that for any $\rm{f} :: \rm{Nat} \rightarrow \rm{Nat}$ we can compute $\ap{h}{(\ap{f}{n})}$ to determine if $\rm{f}$ halts on input $\rm{n}$ and so this would indeed determine those inputs for which $\rm{f}$ halted.
 
-In order to mimic the argument above we need to introduce a fixed point function which we can do as follows:
+In order to mimic the argument above we need to introduce a fixed point function which in Haskell goes by the name fix:
 ```haskell
 {-# LANGUAGE ScopedTypeVariables #-}
 
 fix :: forall a . (a -> a) -> a
 fix f = let x = f x in x
 ```
-We can then define once and for all a non-terminating term inhabiting all (concrete) types:
+We can then, just as before, define a non-terminating term inhabiting all (concrete) types:
 ```haskell
 bottom :: forall a . a
 bottom = fix id
